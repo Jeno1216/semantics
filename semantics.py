@@ -8,7 +8,7 @@ import streamlit as st
 # Load the data
 @st.cache(persist=True)
 def load_data():
-    data = pd.read_csv("your_data.csv")  # replace with your data file name
+    data = pd.read_csv("semantics.csv")  # replace with your data file name
     data = shuffle(data)
     data.reset_index(inplace=True, drop=True)
     return data
