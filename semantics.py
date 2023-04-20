@@ -23,7 +23,7 @@ def preprocess_text(text):
 st.title('Sentiment Analysis with Logistic Regression')
 
 # Load the dataset
-data = pd.read_csv('your_dataset.csv')
+data = pd.read_csv('semantics.csv')
 
 # Preprocess the text data
 data['text'] = data['text'].apply(preprocess_text)
