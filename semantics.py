@@ -1,61 +1,71 @@
-import streamlit as st
 import pandas as pd
 import numpy as np
 import spacy
-from sklearn.model_selection import train_test_split
-from sklearn.metrics import accuracy_score
-from sklearn.linear_model import LogisticRegression
+from spacy.util import minibatch, compounding
+from sklearn.utils import shuffle
+import streamlit as st
 
-# Load the English language model for spaCy
-nlp = spacy.load('en_core_web_sm')
+# Load the data
+@st.cache(persist=True)
+def load_data():
+    data = pd.read_csv("your_data.csv")  # replace with your data file name
+    data = shuffle(data)
+    data.reset_index(inplace=True, drop=True)
+    return data
 
-# Define a function to preprocess the text
-def preprocess_text(text):
-    # Tokenize the text
-    doc = nlp(text)
-    # Remove stop words and lemmatize the tokens
-    tokens = [token.lemma_ for token in doc if not token.is_stop]
-    # Rejoin the tokens into a string
-    preprocessed_text = ' '.join(tokens)
-    return preprocessed_text
+# Train the model
+@st.cache(allow_output_mutation=True)
+def train_model(data, iterations):
+    # Load the small English model
+    nlp = spacy.load('en_core_web_sm')
 
-# Set the title of the web app
-st.title('Sentiment Analysis with Logistic Regression')
+    # Create the TextCategorizer with exclusive classes and "bow" architecture
+    textcat = nlp.create_pipe(
+        "textcat",
+        config={
+            "exclusive_classes": True,
+            "architecture": "bow"
+        }
+    )
 
-# Load the dataset
-data = pd.read_csv('semantics.csv')
+    # Add the TextCategorizer to the pipeline and disable other pipes
+    nlp.add_pipe(textcat)
+    other_pipes = [pipe for pipe in nlp.pipe_names if pipe != "textcat"]
+    with nlp.disable_pipes(*other_pipes):
+        # Initialize the TextCategorizer and add the labels
+        textcat.add_label("agree")
+        textcat.add_label("disagree")
 
-# Preprocess the text data
-data['text'] = data['text'].apply(preprocess_text)
+        # Convert the data into the format expected by the TextCategorizer
+        train_data = []
+        for i, row in data.iterrows():
+            text = row['text']
+            text = text.replace('\r\n', '')  # remove '\r\n' characters
+            label = row['label']
+            if label == 'agree':
+                label_dict = {"cats": {"agree": 1, "disagree": 0}}
+            elif label == 'disagree':
+                label_dict = {"cats": {"agree": 0, "disagree": 1}}
+            train_data.append((text, label_dict))
 
-# Split the data into training and testing sets
-X_train, X_test, y_train, y_test = train_test_split(data['text'], data['label'], test_size=0.2, random_state=42)
+        # Train the TextCategorizer
+        losses = {}
+        for i in range(iterations):
+            batches = minibatch(train_data, size=compounding(4.0, 32.0, 1.001))
+            for batch in batches:
+                texts, annotations = zip(*batch)
+                nlp.update(texts, annotations, sgd=spacy.optimizers.Adam(learning_rate=0.001), losses=losses)
+        return nlp
 
-# Train a logistic regression model
-model = LogisticRegression()
-model.fit(X_train, y_train)
 
-# Evaluate the model on the testing set
-y_pred = model.predict(X_test)
-accuracy = accuracy_score(y_test, y_pred)
+# Load the data
+data = load_data()
 
-# Display the accuracy score
-st.write('Model Accuracy:', accuracy)
+# Train the model
+model = train_model(data, 10)
 
-# Create a survey with one question and two choices (agree or disagree)
-survey_question = st.selectbox('Do you agree or disagree?', ('Agree', 'Disagree'))
-
-# Get the respondent's explanation for their choice
-explanation = st.text_input('Why do you feel this way?')
-
-# Preprocess the respondent's input
-processed_explanation = preprocess_text(explanation)
-
-# Make a prediction with the model
-prediction = model.predict([processed_explanation])[0]
-
-# Display the prediction
-if prediction == 1:
-    st.write('Our model predicts that you agree with the statement.')
-else:
-    st.write('Our model predicts that you disagree with the statement.')
+# Test the model
+while True:
+    text = input("Enter some text: ")
+    doc = model(text)
+    print(doc.cats)
