@@ -15,6 +15,8 @@ import string
 import matplotlib.pyplot as plt
 import seaborn as sns
 import base64
+from wordcloud import WordCloud
+from collections import Counter
 
 # Define the Streamlit app
 def app():
@@ -28,15 +30,9 @@ def app():
     stopwords_list.remove('not')
     tokenizer = ToktokTokenizer()
 
-    st.title("Sentiment Analysis [SOGIE Bill]")      
-    st.subheader("(c) 2023 Jeno D. Bellido.")
-    
-    st.subheader('The TextBlob Package')
-    st.write('TextBlob is a Python package for natural language processing (NLP) \
-    tasks such as part-of-speech tagging, sentiment analysis, and text classification. \
-    It is built on top of the popular Natural Language Toolkit (NLTK) and provides a \
-    simple and intuitive API for performing various NLP tasks.')
-    
+    st.title("Sentiment Analysis on AI Making CS Professionals Obsolete")      
+    st.subheader("(c) 2023 Louie F. Cervantes, M.Eng.")
+
     st.subheader('Sentiment Analysis')
     st.write("Sentiment analysis is the process of determining the emotional tone of a \
     piece of text. TextBlob provides two properties for sentiment analysis: polarity and \
@@ -49,10 +45,10 @@ def app():
     0.0 represents a completely objective viewpoint and 1.0 represents a completely \
     subjective viewpoint.")
     
-    st.subheader('SOGIE Bill Dataset')
-    st.write('We load the SOGIE Bill dataset containing 2 columns: text - contains the text \
-    of the review, and label - contains the "Disagree" for negative and "Agree" for positive reviews. The \
-    dataset contains 41 rows of data. We load the first 20 rows for viewing.')
+    st.subheader('Survey Topic')
+    st.write('We conducted a survey among CS students and ask if they agree or disagree that \
+    AI will soon make CS professionals obsolete and briefly explain their answer.  \
+    The Disagree responses are labeled 0 and the Agree are labeled as 1.')
     
     with st.echo(code_location='below'):
         
@@ -116,26 +112,18 @@ def app():
             return text
         
         if st.button('Load Dataset'):  
-            df = pd.read_csv('semantics.csv')
-            st.write(df.head(20))
-            st.write('Dataset shape: ')
-            st.text(df.shape)
-            
-            #Randomly select samples, 20 + 20 = 40, this is the number of rows in the output csv
-            label_0=df[df['label']=="Agree"].sample(n=20)
-            label_1=df[df['label']=="Disagree"].sample(n=20)
-            
-            train = pd.concat([label_1, label_0])
+            df = pd.read_csv('sentimentcs.csv')
 
             #remember this very useful function to randomly rearrange the dataset
-            train = shuffle(train)
+            train = shuffle(df)
             
-            st.write('We then randomly select 20 samples of positive reviews and \
-            20 samples of negative answers.')
             
-            st.write('We display the 40 rows of the training dataset')
-            st.write(train.head(40))
-            
+            st.write('There were 20 responses and we display them in the table below.')
+            st.dataframe(train, use_container_width=True)
+   
+            st.write('Dataset shape: ')
+            st.text(df.shape)
+        
             st.write('Checking for null values. Do not proceed if we find a null value.')
             st.write(train.isnull().sum())
             
@@ -181,12 +169,12 @@ def app():
             train['text']=train['text'].apply(remove_numbers) 
             
             st.text('We look at our dataset after more pre-processing steps')
-            st.write(train.head())    
+            st.write(train.head(50))    
 
             st.write('Removing alpha numeric data...')
             train['text']=train['text'].apply(remove_alphanumeric)
             st.text('We look at our dataset after the pre-processing steps')
-            st.write(train.head())
+            st.write(train.head(50))
 
             st.write('We lemmatize the words. \
                       \nThis process could take up to several minutes to complete. Please wait....')
@@ -197,7 +185,7 @@ def app():
             train['sentiment']=train['text'].apply(lambda tweet: TextBlob(tweet).sentiment)
             
             st.write('We look at our dataset after more pre-processing steps')
-            st.write(train.head(50))
+            st.dataframe(train, use_container_width=True)
 
             sentiment_series=train['sentiment'].tolist()
             columns = ['polarity', 'subjectivity']
@@ -205,16 +193,16 @@ def app():
             result = pd.concat([train, df1], axis=1)
             result.drop(['sentiment'],axis=1, inplace=True)
 
-            result.loc[result['polarity']>=0.3, 'Sentiment'] = "Positive"
-            result.loc[result['polarity']<0.3, 'Sentiment'] = "Negative"
+            result.loc[result['polarity']>=0.1, 'Sentiment'] = "Positive"
+            result.loc[result['polarity']<0.1, 'Sentiment'] = "Negative"
 
-            result.loc[result['label']==1, 'Sentiment_label'] = 1
-            result.loc[result['label']==0, 'Sentiment_label'] = 0
+            result.loc[result['label']=="1", 'Sentiment_label'] = 1
+            result.loc[result['label']=="0", 'Sentiment_label'] = 0
             result.drop(['label'],axis=1, inplace=True)
             
             st.write('We view the dataset after the sentiment labels are updated.')
             result = result.sort_values(by=['Sentiment'], ascending=False)
-            st.write(result.head(500))
+            st.dataframe(result, use_container_width=True)
 
             counts = result['Sentiment'].value_counts()
             st.write(counts)
@@ -229,10 +217,65 @@ def app():
             plt.pie(sizes, labels = labels, textprops={'fontsize': 10}, startangle=140, \
                     autopct='%1.0f%%', colors=custom_colours, explode=[0, 0.05])
             plt.subplot(1, 2, 2)
-            sns.barplot(x = result['Sentiment'].unique(), y = result['Sentiment'].value_counts(), \
+            sns.barplot(x = labels, y = sizes, \
                     palette= 'viridis')
             st.pyplot(fig)
             
+            st.subheader('Negative Sentiment')
+            
+            st.write('Display the word cloud of the negative sentiment')
+            
+            text = " ".join(result[result['Sentiment'] == 'Negative']['text'])
+            fig = plt.figure(figsize = (8, 4))
+            wordcloud = WordCloud(max_words=500, height= 800, width = 1500,  \
+                                  background_color="black", colormap= 'viridis').generate(text)
+            plt.imshow(wordcloud, interpolation='bilinear')
+            plt.axis('off')
+            st.pyplot(fig)
+            
+            all_nodep_words = []
+            for sentence in result[result['Sentiment'] == 'Negative']['text'].to_list():
+                for word in sentence.split():
+                   all_nodep_words.append(word)
+
+            df = pd.DataFrame(Counter(all_nodep_words).most_common(25), columns= ['Word', 'Frequency'])
+
+            sns.set_context('notebook', font_scale= 1)
+            fig = plt.figure(figsize=(8,4))
+            sns.barplot(y = df['Word'], x= df['Frequency'], palette= 'summer')
+            plt.title("Most Commonly Used Words of the Negative Sentiment")
+            plt.xlabel("Frequency")
+            plt.ylabel("Words")
+            st.pyplot(fig)
+            
+            
+            st.subheader('Positive Sentiment')
+            
+            st.write('Display the word cloud of the positive sentiment')
+            
+            text = " ".join(result[result['Sentiment'] == 'Positive']['text'])
+            fig = plt.figure(figsize = (8, 4))
+            wordcloud = WordCloud(max_words=500, height= 800, width = 1500,  \
+                                  background_color="black", colormap= 'viridis').generate(text)
+            plt.imshow(wordcloud, interpolation='bilinear')
+            plt.axis('off')
+            st.pyplot(fig)
+            
+            all_nodep_words = []
+            for sentence in result[result['Sentiment'] == 'Positive']['text'].to_list():
+                for word in sentence.split():
+                   all_nodep_words.append(word)
+
+            df = pd.DataFrame(Counter(all_nodep_words).most_common(25), columns= ['Word', 'Frequency'])
+
+            sns.set_context('notebook', font_scale= 1)
+            fig = plt.figure(figsize=(8,4))
+            sns.barplot(y = df['Word'], x= df['Frequency'], palette= 'summer')
+            plt.title("Most Commonly Used Words of the Positive Sentiment")
+            plt.xlabel("Frequency")
+            plt.ylabel("Words")
+            st.pyplot(fig)
+                                            
             # Save the dataframe to a CSV file
             csv = result.to_csv(index=False)
             if csv:
