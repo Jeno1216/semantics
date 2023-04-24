@@ -238,6 +238,7 @@ def app():
             if csv:
                 b64 = base64.b64encode(csv.encode()).decode()  # Convert to base64
                 href = f'<a href="data:file/csv;base64,{b64}" download="data.csv">Download CSV file</a>'
+                st.markdown(href, unsafe_allow_html=True)
             else:
                 st.write("Error: Unable to generate CSV file.")
 
