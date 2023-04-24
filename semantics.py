@@ -121,7 +121,7 @@ def app():
             st.write('Dataset shape: ')
             st.text(df.shape)
             
-            #Randomly select samples
+            #Randomly select samples, 10 + 10 = 20, this is the number of rows in the output csv
             label_0=df[df['label']=="Agree"].sample(n=10)
             label_1=df[df['label']=="Disagree"].sample(n=10)
             
