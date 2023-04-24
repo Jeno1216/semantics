@@ -122,8 +122,8 @@ def app():
             st.text(df.shape)
             
             #Randomly select samples
-            label_0=df[df['label']==0].sample(n=5)
-            label_1=df[df['label']==1].sample(n=5)
+            label_0=df[df['label']=="Agree"].sample(n=5)
+            label_1=df[df['label']=="Disagree"].sample(n=5)
             
             train = pd.concat([label_1, label_0])
 
@@ -184,12 +184,12 @@ def app():
             train['text']=train['text'].apply(remove_numbers) 
             
             st.text('We look at our dataset after more pre-processing steps')
-            st.write(train.head(50))    
+            st.write(train.head())    
 
             st.write('Removing alpha numeric data...')
             train['text']=train['text'].apply(remove_alphanumeric)
             st.text('We look at our dataset after the pre-processing steps')
-            st.write(train.head(50))
+            st.write(train.head())
 
             st.write('We lemmatize the words. \
                       \nThis process could take up to several minutes to complete. Please wait....')
