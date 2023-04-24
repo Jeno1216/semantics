@@ -122,8 +122,8 @@ def app():
             st.text(df.shape)
             
             #Randomly select samples, 10 + 10 = 20, this is the number of rows in the output csv
-            label_0=df[df['label']=="Agree"].sample(n=10)
-            label_1=df[df['label']=="Disagree"].sample(n=10)
+            label_0=df[df['label']=="Agree"].sample(n=100)
+            label_1=df[df['label']=="Disagree"].sample(n=100)
             
             train = pd.concat([label_1, label_0])
 
