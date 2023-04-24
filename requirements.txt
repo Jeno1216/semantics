@@ -1,7 +1,10 @@
+streamlit
+streamlit_option_menu
+nltk
 numpy
 pandas
-streamlit
-scikit-learn
+textblob
 spacy
-nltk
-TextBlob
+scikit-learn
+matplotlib
+seaborn
