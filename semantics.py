@@ -1,7 +1,10 @@
-import spacy
-import streamlit as st
 import pandas as pd
-from random import shuffle
+import unicodedata
+import nltk
+from sklearn.feature_extraction.text import CountVectorizer
+from sklearn.linear_model import LogisticRegression
+from textblob import TextBlob
+import spacy
 
 #The following function definitions show the codes need to perform each task
 def custom_remove_stopwords(text, is_lower_case=False):
@@ -63,17 +66,28 @@ def lemmatize_text(text):
     return text
 
 if st.button('Load Dataset'):  
-    df = pd.read_csv('semantics.csv')
-
-    #remember this very useful function to randomly rearrange the dataset
-    train = shuffle(df)
-
-
-    st.write('There were 20 responses and we display them in the table below.')
-    st.dataframe(train, use_container_width=True)
-
+    df = pd.read_csv('TextBlobTrain.csv')
+    st.write(df.head(20))
     st.write('Dataset shape: ')
     st.text(df.shape)
+
+    #Randomly select samples
+    label_0=df[df['label']==0].sample(n=500)
+    label_1=df[df['label']==1].sample(n=500)
+
+    train = pd.concat([label_1, label_0])
+
+    #remember this very useful function to randomly rearrange the dataset
+    train = shuffle(train)
+
+    st.write('We then randomly select 500 samples of positive reviews and \
+    500 samples of negative reviews.  Remember the labels were added by \
+    human reviewers and may not be the real sentiment.  We will use AI \
+    to generate a new setiment value based on the analysis of the actual \
+    text of the review.')
+
+    st.write('We display the first 50 rows of the training dataset')
+    st.write(train.head(50))
 
     st.write('Checking for null values. Do not proceed if we find a null value.')
     st.write(train.isnull().sum())
@@ -136,7 +150,7 @@ if st.button('Load Dataset'):
     train['sentiment']=train['text'].apply(lambda tweet: TextBlob(tweet).sentiment)
 
     st.write('We look at our dataset after more pre-processing steps')
-    st.dataframe(train, use_container_width=True)
+    st.write(train.head(50))
 
     sentiment_series=train['sentiment'].tolist()
     columns = ['polarity', 'subjectivity']
@@ -144,16 +158,16 @@ if st.button('Load Dataset'):
     result = pd.concat([train, df1], axis=1)
     result.drop(['sentiment'],axis=1, inplace=True)
 
-    result.loc[result['polarity']>=0.1, 'Sentiment'] = "Positive"
-    result.loc[result['polarity']<0.1, 'Sentiment'] = "Negative"
+    result.loc[result['polarity']>=0.3, 'Sentiment'] = "Positive"
+    result.loc[result['polarity']<0.3, 'Sentiment'] = "Negative"
 
-    result.loc[result['label']=="1", 'Sentiment_label'] = 1
-    result.loc[result['label']=="0", 'Sentiment_label'] = 0
+    result.loc[result['label']==1, 'Sentiment_label'] = 1
+    result.loc[result['label']==0, 'Sentiment_label'] = 0
     result.drop(['label'],axis=1, inplace=True)
 
     st.write('We view the dataset after the sentiment labels are updated.')
     result = result.sort_values(by=['Sentiment'], ascending=False)
-    st.dataframe(result, use_container_width=True)
+    st.write(result.head(500))
 
     counts = result['Sentiment'].value_counts()
     st.write(counts)
@@ -168,63 +182,8 @@ if st.button('Load Dataset'):
     plt.pie(sizes, labels = labels, textprops={'fontsize': 10}, startangle=140, \
             autopct='%1.0f%%', colors=custom_colours, explode=[0, 0.05])
     plt.subplot(1, 2, 2)
-    sns.barplot(x = labels, y = sizes, \
+    sns.barplot(x = result['Sentiment'].unique(), y = result['Sentiment'].value_counts(), \
             palette= 'viridis')
-    st.pyplot(fig)
-
-    st.subheader('Negative Sentiment')
-
-    st.write('Display the word cloud of the negative sentiment')
-
-    text = " ".join(result[result['Sentiment'] == 'Negative']['text'])
-    fig = plt.figure(figsize = (8, 4))
-    wordcloud = WordCloud(max_words=500, height= 800, width = 1500,  \
-                          background_color="black", colormap= 'viridis').generate(text)
-    plt.imshow(wordcloud, interpolation='bilinear')
-    plt.axis('off')
-    st.pyplot(fig)
-
-    all_nodep_words = []
-    for sentence in result[result['Sentiment'] == 'Negative']['text'].to_list():
-        for word in sentence.split():
-           all_nodep_words.append(word)
-
-    df = pd.DataFrame(Counter(all_nodep_words).most_common(25), columns= ['Word', 'Frequency'])
-
-    sns.set_context('notebook', font_scale= 1)
-    fig = plt.figure(figsize=(8,4))
-    sns.barplot(y = df['Word'], x= df['Frequency'], palette= 'summer')
-    plt.title("Most Commonly Used Words of the Negative Sentiment")
-    plt.xlabel("Frequency")
-    plt.ylabel("Words")
-    st.pyplot(fig)
-
-
-    st.subheader('Positive Sentiment')
-
-    st.write('Display the word cloud of the positive sentiment')
-
-    text = " ".join(result[result['Sentiment'] == 'Positive']['text'])
-    fig = plt.figure(figsize = (8, 4))
-    wordcloud = WordCloud(max_words=500, height= 800, width = 1500,  \
-                          background_color="black", colormap= 'viridis').generate(text)
-    plt.imshow(wordcloud, interpolation='bilinear')
-    plt.axis('off')
-    st.pyplot(fig)
-
-    all_nodep_words = []
-    for sentence in result[result['Sentiment'] == 'Positive']['text'].to_list():
-        for word in sentence.split():
-           all_nodep_words.append(word)
-
-    df = pd.DataFrame(Counter(all_nodep_words).most_common(25), columns= ['Word', 'Frequency'])
-
-    sns.set_context('notebook', font_scale= 1)
-    fig = plt.figure(figsize=(8,4))
-    sns.barplot(y = df['Word'], x= df['Frequency'], palette= 'summer')
-    plt.title("Most Commonly Used Words of the Positive Sentiment")
-    plt.xlabel("Frequency")
-    plt.ylabel("Words")
     st.pyplot(fig)
 
     # Save the dataframe to a CSV file
