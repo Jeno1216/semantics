@@ -30,8 +30,8 @@ def app():
     stopwords_list.remove('not')
     tokenizer = ToktokTokenizer()
 
-    st.title("Sentiment Analysis on AI Making CS Professionals Obsolete")      
-    st.subheader("(c) 2023 Louie F. Cervantes, M.Eng.")
+    st.title("Sentiment Analysis SOGIE Bill")      
+    st.subheader("(c) 2023 Jeno D. Bellido, AI Student.")
 
     st.subheader('Sentiment Analysis')
     st.write("Sentiment analysis is the process of determining the emotional tone of a \
@@ -46,8 +46,8 @@ def app():
     subjective viewpoint.")
     
     st.subheader('Survey Topic')
-    st.write('We conducted a survey among CS students and ask if they agree or disagree that \
-    AI will soon make CS professionals obsolete and briefly explain their answer.  \
+    st.write('We conducted a survey among random people and ask if they agree or disagree that \
+    SOGIE Bill should be passed into law in the Philippines \
     The Disagree responses are labeled 0 and the Agree are labeled as 1.')
     
     with st.echo(code_location='below'):
