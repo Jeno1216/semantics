@@ -28,8 +28,8 @@ def app():
     stopwords_list.remove('not')
     tokenizer = ToktokTokenizer()
 
-    st.title("TextBlob Sentiment Analysis")      
-    st.subheader("(c) 2023 Louie F. Cervantes, M.Eng.")
+    st.title("Sentiment Analysis [SOGIE Bill]")      
+    st.subheader("(c) 2023 Jeno D. Bellido.")
     
     st.subheader('The TextBlob Package')
     st.write('TextBlob is a Python package for natural language processing (NLP) \
@@ -49,10 +49,10 @@ def app():
     0.0 represents a completely objective viewpoint and 1.0 represents a completely \
     subjective viewpoint.")
     
-    st.subheader('Movie Review Dataset')
-    st.write('We load a movie review dataset containing 2 columns: text - contains the text \
-    of the review, and label - contains the 0 for negative and 1 for positive reviews. The \
-    dataset contains 40,000 rows of data. We load the first 20 rows for viewing.')
+    st.subheader('SOGIE Bill Dataset Dataset')
+    st.write('We load the SOGIE Bill dataset containing 2 columns: text - contains the text \
+    of the review, and label - contains the "Disagree" for negative and "Agree" for positive reviews. The \
+    dataset contains 41 rows of data. We load the first 20 rows for viewing.')
     
     with st.echo(code_location='below'):
         
@@ -121,7 +121,7 @@ def app():
             st.write('Dataset shape: ')
             st.text(df.shape)
             
-            #Randomly select samples, 10 + 10 = 20, this is the number of rows in the output csv
+            #Randomly select samples, 20 + 20 = 40, this is the number of rows in the output csv
             label_0=df[df['label']=="Agree"].sample(n=20)
             label_1=df[df['label']=="Disagree"].sample(n=20)
             
@@ -130,14 +130,11 @@ def app():
             #remember this very useful function to randomly rearrange the dataset
             train = shuffle(train)
             
-            st.write('We then randomly select 500 samples of positive reviews and \
-            500 samples of negative reviews.  Remember the labels were added by \
-            human reviewers and may not be the real sentiment.  We will use AI \
-            to generate a new setiment value based on the analysis of the actual \
-            text of the review.')
+            st.write('We then randomly select 20 samples of positive reviews and \
+            20 samples of negative answers.')
             
-            st.write('We display the first 50 rows of the training dataset')
-            st.write(train.head(50))
+            st.write('We display the 40 rows of the training dataset')
+            st.write(train.head(40))
             
             st.write('Checking for null values. Do not proceed if we find a null value.')
             st.write(train.isnull().sum())
