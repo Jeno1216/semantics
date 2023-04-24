@@ -49,7 +49,7 @@ def app():
     0.0 represents a completely objective viewpoint and 1.0 represents a completely \
     subjective viewpoint.")
     
-    st.subheader('SOGIE Bill Dataset Dataset')
+    st.subheader('SOGIE Bill Dataset')
     st.write('We load the SOGIE Bill dataset containing 2 columns: text - contains the text \
     of the review, and label - contains the "Disagree" for negative and "Agree" for positive reviews. The \
     dataset contains 41 rows of data. We load the first 20 rows for viewing.')
